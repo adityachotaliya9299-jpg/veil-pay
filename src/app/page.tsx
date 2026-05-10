@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Shield, Eye, FileText, Zap, Lock, ArrowRight, CheckCircle } from "lucide-react";
+import { ClientOnly } from "@/components/ClientOnly";
 
 export default function LandingPage() {
   return (
@@ -51,7 +52,9 @@ export default function LandingPage() {
           <span style={{ color: "var(--text-muted)", fontSize: "13px", fontFamily: "var(--font-mono)" }}>
             powered by Umbra
           </span>
-          <WalletMultiButton />
+          <ClientOnly>
+            <WalletMultiButton />
+          </ClientOnly>
         </div>
       </nav>
 

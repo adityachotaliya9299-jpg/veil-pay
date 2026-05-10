@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { ClientOnly } from "@/components/ClientOnly";
 import { Shield, LayoutDashboard, Users, Eye, LogOut } from "lucide-react";
 
 const NAV = [
@@ -92,7 +93,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           }}>
             devnet
           </div>
-          <WalletMultiButton />
+          <ClientOnly>
+            <WalletMultiButton />
+            </ClientOnly>
         </header>
 
         {/* Content */}
