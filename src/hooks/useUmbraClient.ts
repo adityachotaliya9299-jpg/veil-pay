@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { VersionedTransaction } from "@solana/web3.js";
-import { getUmbraClient } from "@umbra-privacy/sdk";
+import { getWallets } from "@wallet-standard/app";
+import { createSignerFromWalletAccount, getUmbraClient } from "@umbra-privacy/sdk";
 
 const RPC = process.env.NEXT_PUBLIC_RPC_URL || "https://api.devnet.solana.com";
 
@@ -11,20 +11,20 @@ const DEVNET_CONFIG = {
   rpcUrl: RPC,
   rpcSubscriptionsUrl: RPC.replace("https://", "wss://").replace("http://", "ws://"),
   indexerApiEndpoint: "https://utxo-indexer.api.umbraprivacy.com",
+  deferMasterSeedSignature: true, // ← critical: don't call signMessage at init
 };
 
 export type UmbraClientStatus = "idle" | "initializing" | "ready" | "error";
 
 export function useUmbraClient() {
-  const { connected, publicKey, signTransaction, signMessage } = useWallet();
+  const { connected, publicKey } = useWallet();
   const clientRef = useRef<Awaited<ReturnType<typeof getUmbraClient>> | null>(null);
   const [status, setStatus] = useState<UmbraClientStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const builtForKey = useRef<string | null>(null);
 
   const initClient = useCallback(async () => {
-    if (!connected || !publicKey || !signTransaction || !signMessage) return;
-
+    if (!connected || !publicKey) return;
     const pubkeyStr = publicKey.toBase58();
     if (builtForKey.current === pubkeyStr && clientRef.current) return;
 
@@ -32,59 +32,43 @@ export function useUmbraClient() {
     setError(null);
 
     try {
-      // Import kit encoder/decoder once at init time
-      const { getTransactionEncoder, getTransactionDecoder, address: kitAddress } =  await import("@solana/kit");
+      const { get } = getWallets();
+      const allWallets = get();
 
-      const encoder = getTransactionEncoder();
-      const decoder = getTransactionDecoder();
+      let matchedWallet = null;
+      let matchedAccount = null;
 
-      // Custom signer: bypasses createSignerFromWalletAccount
-      // Uses wallet adapter's signTransaction directly (avoids Wallet Standard bug)
-      const signer = {
-        address: kitAddress(pubkeyStr),
+      for (const w of allWallets) {
+        for (const account of w.accounts) {
+          if (account.address === pubkeyStr) {
+            matchedWallet = w;
+            matchedAccount = account;
+            break;
+          }
+        }
+        if (matchedWallet) break;
+      }
 
-         async signTransaction(kitTx: any): Promise<any> {
-          // 1. Encode @solana/kit tx → Solana wire bytes (same format as web3.js v1)
-          const encoded = encoder.encode(kitTx);
-          const txBytes = new Uint8Array(encoded as unknown as ArrayBufferLike);
+      if (!matchedWallet || !matchedAccount) {
+        throw new Error("Wallet not found in Wallet Standard registry.");
+      }
 
-          // 2. Deserialize as VersionedTransaction for wallet adapter
-          const vTx = VersionedTransaction.deserialize(txBytes);
-
-          // 3. Sign via wallet adapter (window.phantom.solana path — known to work)
-          const signed = await signTransaction(vTx as any);
-
-          // 4. Decode signed bytes back to @solana/kit format
-          const signedBytes = signed.serialize();
-          return decoder.decode(signedBytes);
-        },
-
-        async signTransactions(kitTxs: readonly any[]): Promise<any[]> {
-          return Promise.all(kitTxs.map((tx: any) => signer.signTransaction(tx)));
-        },
-
-        async signMessage(message: Uint8Array): Promise<any> {
-          const sig = await signMessage(message);
-          return { bytes: sig };
-        },
-      };
-
-      const client = await getUmbraClient({
-        signer: signer as any,
-        ...DEVNET_CONFIG,
-      });
+      const signer = createSignerFromWalletAccount(matchedWallet, matchedAccount);
+      const client = await getUmbraClient(DEVNET_CONFIG.network === "devnet"
+        ? { signer, ...DEVNET_CONFIG }
+        : { signer, ...DEVNET_CONFIG }
+      );
 
       clientRef.current = client;
       builtForKey.current = pubkeyStr;
       setStatus("ready");
-      console.log("[useUmbraClient] Client ready, custom signer active");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to initialize Umbra client";
       setError(msg);
       setStatus("error");
       console.error("[useUmbraClient]", err);
     }
-  }, [connected, publicKey, signTransaction, signMessage]);
+  }, [connected, publicKey]);
 
   useEffect(() => {
     if (connected && publicKey) {
