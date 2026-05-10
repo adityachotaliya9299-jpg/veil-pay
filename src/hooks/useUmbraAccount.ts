@@ -5,7 +5,6 @@ import {
   getUserAccountQuerierFunction,
 } from "@umbra-privacy/sdk";
 import { isRegistrationError } from "@umbra-privacy/sdk/errors";
-import { getUserRegistrationProver } from "@umbra-privacy/web-zk-prover";
 import type { useUmbraClient } from "./useUmbraClient";
 
 type Client = ReturnType<typeof useUmbraClient>["client"];
@@ -58,6 +57,7 @@ export function useUmbraAccount(client: Client) {
     setRegError(null);
 
     try {
+      const { getUserRegistrationProver } = await import("@umbra-privacy/web-zk-prover");
       const zkProver = getUserRegistrationProver();
       const registerFn = getUserRegistrationFunction({ client }, { zkProver });
       const sigs = await registerFn({
