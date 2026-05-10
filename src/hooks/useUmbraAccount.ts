@@ -1,0 +1,128 @@
+"use client";
+import { useState, useCallback, useEffect } from "react";
+import {
+  getUserRegistrationFunction,
+  getUmbraAccountStateFunction,
+} from "@umbra-privacy/sdk";
+import { isRegistrationError } from "@umbra-privacy/sdk/errors";
+import type { useUmbraClient } from "./useUmbraClient";
+
+type Client = ReturnType<typeof useUmbraClient>["client"];
+
+export type RegistrationStatus =
+  | "unknown"
+  | "checking"
+  | "unregistered"
+  | "registering"
+  | "registered"
+  | "error";
+
+export function useUmbraAccount(client: Client) {
+  const [regStatus, setRegStatus] = useState<RegistrationStatus>("unknown");
+  const [regError, setRegError] = useState<string | null>(null);
+  const [isConfidential, setIsConfidential] = useState(false);
+  const [isAnonymous, setIsAnonymous] = useState(false);
+
+  // Check on-chain registration state
+  const checkRegistration = useCallback(async () => {
+    if (!client) return;
+    setRegStatus("checking");
+    setRegError(null);
+
+    try {
+      const getAccountState = getUmbraAccountStateFunction({ client });
+      const state = await getAccountState(client.signer.address);
+
+      if (!state || !state.isInitialized) {
+        setIsConfidential(false);
+        setIsAnonymous(false);
+        setRegStatus("unregistered");
+      } else {
+        setIsConfidential(state.isConfidentialEnabled ?? false);
+        setIsAnonymous(state.isAnonymousEnabled ?? false);
+        setRegStatus("registered");
+      }
+    } catch (err) {
+      // Account not found = not registered
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("not found") || msg.includes("does not exist") || msg.includes("AccountNotFound")) {
+        setRegStatus("unregistered");
+      } else {
+        setRegError(msg);
+        setRegStatus("error");
+        console.error("[useUmbraAccount] check:", err);
+      }
+    }
+  }, [client]);
+
+  // Register user with Umbra
+  const register = useCallback(async () => {
+    if (!client) return;
+    setRegStatus("registering");
+    setRegError(null);
+
+    try {
+      const registerFn = getUserRegistrationFunction({ client });
+      const sigs = await registerFn({
+        confidential: true,
+        anonymous: true,
+        callbacks: {
+          userAccountInitialisation: {
+            pre: async () => console.log("[Umbra] Creating account..."),
+            post: async (_tx: unknown, sig: string) => console.log("[Umbra] Account created:", sig),
+          },
+          registerX25519PublicKey: {
+            pre: async () => console.log("[Umbra] Registering encryption key..."),
+            post: async (_tx: unknown, sig: string) => console.log("[Umbra] Key registered:", sig),
+          },
+          registerUserForAnonymousUsage: {
+            pre: async () => console.log("[Umbra] Registering commitment..."),
+            post: async (_tx: unknown, sig: string) => console.log("[Umbra] Commitment registered:", sig),
+          },
+        },
+      });
+
+      console.log(`[Umbra] Registered in ${sigs.length} tx(s)`);
+      setIsConfidential(true);
+      setIsAnonymous(true);
+      setRegStatus("registered");
+    } catch (err) {
+      let msg = "Registration failed";
+      if (isRegistrationError(err)) {
+        switch (err.stage) {
+          case "master-seed-derivation": msg = "Please sign the message in your wallet to set up Umbra."; break;
+          case "transaction-sign": msg = "You cancelled the registration transaction."; break;
+          case "zk-proof-generation": msg = "ZK proof generation failed. Please try again."; break;
+          case "transaction-send": msg = "Transaction timed out. Please retry."; break;
+          default: msg = `Registration failed at: ${err.stage}`;
+        }
+      } else if (err instanceof Error) {
+        msg = err.message;
+      }
+      setRegError(msg);
+      setRegStatus("error");
+      console.error("[useUmbraAccount] register:", err);
+    }
+  }, [client]);
+
+  // Auto-check when client becomes ready
+  useEffect(() => {
+    if (client) {
+      checkRegistration();
+    } else {
+      setRegStatus("unknown");
+      setIsConfidential(false);
+      setIsAnonymous(false);
+      setRegError(null);
+    }
+  }, [client, checkRegistration]);
+
+  return {
+    regStatus,
+    regError,
+    isConfidential,
+    isAnonymous,
+    register,
+    checkRegistration,
+  };
+}
