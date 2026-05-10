@@ -112,13 +112,17 @@ export default function PayrollPage() {
         try {
           const amount = BigInt(Math.floor(parseFloat(r.amount) * 1_000_000)); // USDC 6 decimals
 
-          const sigs = await createUtxo({
-            destinationAddress: r.address.trim() as any,
-            mint: mint as any,
+          const sigs = await (createUtxo as any)({
+            destinationAddress: r.address.trim(),
+            mint: mint,
             amount,
-          });
+            });
 
-          results[idx] = { ...results[idx], status: "sent", txSig: sigs[0] };
+          results[idx] = { 
+            ...results[idx], 
+            status: "sent", 
+            txSig: Array.isArray(sigs) ? sigs[0] : String(sigs) 
+            };
           setRecipients([...results]);
         } catch (err) {
           const msg = err instanceof Error ? err.message : "Transfer failed";
