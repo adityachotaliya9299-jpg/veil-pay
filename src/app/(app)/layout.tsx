@@ -3,11 +3,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { ClientOnly } from "@/components/ClientOnly";
-import { Shield, LayoutDashboard, Users, Eye, LogOut } from "lucide-react";
+import { Shield, LayoutDashboard, Users, Zap, Eye, LogOut } from "lucide-react";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/payroll", label: "Payroll", icon: Users },
+  { href: "/team", label: "Team", icon: Users },       
+  { href: "/payroll", label: "Payroll", icon: Zap },   
   { href: "/compliance", label: "Compliance", icon: Eye },
 ];
 

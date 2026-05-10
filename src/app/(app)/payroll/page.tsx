@@ -1,5 +1,6 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { historyStorage } from "@/lib/teamStorage";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { ClientOnly } from "@/components/ClientOnly";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
@@ -14,6 +15,7 @@ const TOKENS = {
   "USDC (Mainnet)": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
   "USDC (Devnet)":  "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
 };
+
 
 type Recipient = {
   id: string;
@@ -57,11 +59,38 @@ export default function PayrollPage() {
   const [expandedRun, setExpandedRun] = useState<string | null>(null);
   const [globalError, setGlobalError] = useState<string | null>(null);
 
+  useEffect(() => {
+  setRunHistory(historyStorage.getAll() as any);
+}, []);
   const addRecipient = () => {
     setRecipients(prev => [...prev, {
       id: Date.now().toString(), label: "", address: "", amount: "", status: "pending"
     }]);
   };
+
+
+const fileInputRef = useRef<HTMLInputElement>(null);
+
+const importCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const text = ev.target?.result as string;
+    const lines = text.split("\n").filter(l => l.trim());
+    const newRecipients = lines
+      .slice(1) // skip header
+      .map(line => {
+        const [label, address, amount] = line.split(",").map(s => s.trim().replace(/"/g, ""));
+        if (!address || !amount) return null;
+        return { id: Date.now().toString() + Math.random(), label: label || "", address, amount, status: "pending" as const };
+      })
+      .filter(Boolean) as typeof recipients;
+    if (newRecipients.length > 0) setRecipients(newRecipients);
+  };
+  reader.readAsText(file);
+  e.target.value = "";
+};
 
   const removeRecipient = (id: string) => {
     if (recipients.length === 1) return;
@@ -89,6 +118,9 @@ export default function PayrollPage() {
         ? { ...r, status: "sending" }
         : r
     ));
+
+
+        
 
     const mint = TOKENS[selectedToken as keyof typeof TOKENS];
     const results: Recipient[] = [...recipients];
@@ -141,6 +173,7 @@ export default function PayrollPage() {
         status: results.every(r => r.status === "sent") ? "complete"
           : results.some(r => r.status === "sent") ? "partial" : "complete",
       };
+      historyStorage.add(run);
       setRunHistory(prev => [run, ...prev]);
 
     } catch (err) {
@@ -296,6 +329,42 @@ export default function PayrollPage() {
               </div>
             ))}
           </div>
+
+          <div style={{ display: "flex", gap: "10px", marginBottom: "8px" }}>
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                onChange={importCSV}
+                style={{ display: "none" }}
+            />
+            <button onClick={() => fileInputRef.current?.click()} style={{
+                display: "flex", alignItems: "center", gap: "8px",
+                padding: "8px 16px", borderRadius: "8px", cursor: "pointer",
+                background: "var(--bg-card)", border: "1px solid var(--border)",
+                color: "var(--text-muted)", fontFamily: "var(--font-display)", fontSize: "12px"
+            }}>
+                📎 Import CSV
+            </button>
+            <p style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "var(--text-muted)", alignSelf: "center" }}>
+                Format: name, address, amount
+            </p>
+            </div>
+
+            <div style={{ display:"flex",gap:"10px",marginBottom:"8px" }}>
+              <input ref={fileInputRef} type="file" accept=".csv" onChange={importCSV} style={{ display:"none" }} />
+                <button onClick={() => fileInputRef.current?.click()} style={{
+                    display:"flex",alignItems:"center",gap:"8px",padding:"8px 16px",borderRadius:"8px",cursor:"pointer",
+                    background:"var(--bg-card)",border:"1px solid var(--border)",
+                    color:"var(--text-muted)",fontFamily:"var(--font-display)",fontSize:"12px"
+                }}>
+                    📎 Import CSV
+                </button>
+                <p style={{ fontFamily:"var(--font-mono)",fontSize:"10px",color:"var(--text-muted)",alignSelf:"center" }}>
+                    Format: name, address, amount
+                </p>
+                </div>
+            
 
           <button onClick={addRecipient} disabled={isSending} style={{
             display:"flex",alignItems:"center",gap:"8px",
