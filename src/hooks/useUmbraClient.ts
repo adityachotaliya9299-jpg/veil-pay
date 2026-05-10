@@ -47,9 +47,7 @@ export function useUmbraClient() {
         async signTransaction(kitTx: any): Promise<any> {
           // 1. Encode @solana/kit tx → Solana wire bytes (same format as web3.js v1)
           const encoded = encoder.encode(kitTx);
-          const txBytes = encoded instanceof Uint8Array
-            ? encoded
-            : new Uint8Array(encoded as ArrayBuffer);
+          const txBytes = new Uint8Array(encoded as unknown as ArrayBufferLike);
 
           // 2. Deserialize as VersionedTransaction for wallet adapter
           const vTx = VersionedTransaction.deserialize(txBytes);
