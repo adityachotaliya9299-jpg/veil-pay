@@ -33,8 +33,7 @@ export function useUmbraClient() {
 
     try {
       // Import kit encoder/decoder once at init time
-      const { getTransactionEncoder, getTransactionDecoder } =
-        await import("@solana/kit");
+      const { getTransactionEncoder, getTransactionDecoder, address: kitAddress } =  await import("@solana/kit");
 
       const encoder = getTransactionEncoder();
       const decoder = getTransactionDecoder();
@@ -42,9 +41,9 @@ export function useUmbraClient() {
       // Custom signer: bypasses createSignerFromWalletAccount
       // Uses wallet adapter's signTransaction directly (avoids Wallet Standard bug)
       const signer = {
-        address: pubkeyStr as any,
+        address: kitAddress(pubkeyStr),
 
-        async signTransaction(kitTx: any): Promise<any> {
+         async signTransaction(kitTx: any): Promise<any> {
           // 1. Encode @solana/kit tx → Solana wire bytes (same format as web3.js v1)
           const encoded = encoder.encode(kitTx);
           const txBytes = new Uint8Array(encoded as unknown as ArrayBufferLike);
