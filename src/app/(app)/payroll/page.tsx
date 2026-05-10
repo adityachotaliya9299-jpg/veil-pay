@@ -4,6 +4,7 @@ import { historyStorage } from "@/lib/teamStorage";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { ClientOnly } from "@/components/ClientOnly";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { memoStorage } from "@/lib/teamStorage";
 import { useUmbraClient } from "@/hooks/useUmbraClient";
 import {
   Plus, Trash2, Send, Lock, CheckCircle,
@@ -15,13 +16,14 @@ const TOKENS = {
   "USDC (Mainnet)": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
   "USDC (Devnet)":  "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
 };
-
+const { connected, publicKey } = useWallet();
 
 type Recipient = {
   id: string;
   label: string;
   address: string;
   amount: string;
+  memo: string; 
   status: "pending" | "sending" | "sent" | "failed";
   txSig?: string;
   error?: string;
@@ -52,7 +54,7 @@ export default function PayrollPage() {
 
   const [selectedToken, setSelectedToken] = useState("USDC (Mainnet)");
   const [recipients, setRecipients] = useState<Recipient[]>([
-    { id: "1", label: "", address: "", amount: "", status: "pending" },
+    { id: "1", label: "", address: "", amount: "",memo: "", status: "pending" },
   ]);
   const [isSending, setIsSending] = useState(false);
   const [runHistory, setRunHistory] = useState<PayrollRun[]>([]);
@@ -63,10 +65,11 @@ export default function PayrollPage() {
   setRunHistory(historyStorage.getAll() as any);
 }, []);
   const addRecipient = () => {
-    setRecipients(prev => [...prev, {
-      id: Date.now().toString(), label: "", address: "", amount: "", status: "pending"
-    }]);
-  };
+  setRecipients(prev => [...prev, {
+    id: Date.now().toString(), label: "", address: "",
+    amount: "", memo: "", status: "pending"   // ← add memo: ""
+  }]);
+};
 
 
 const fileInputRef = useRef<HTMLInputElement>(null);
@@ -83,7 +86,7 @@ const importCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
       .map(line => {
         const [label, address, amount] = line.split(",").map(s => s.trim().replace(/"/g, ""));
         if (!address || !amount) return null;
-        return { id: Date.now().toString() + Math.random(), label: label || "", address, amount, status: "pending" as const };
+        return { id: Date.now().toString() + Math.random(), label: label || "", address, amount, memo: "", status: "pending" as const };
       })
       .filter(Boolean) as typeof recipients;
     if (newRecipients.length > 0) setRecipients(newRecipients);
@@ -155,6 +158,18 @@ const importCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
             status: "sent", 
             txSig: Array.isArray(sigs) ? sigs[0] : String(sigs) 
             };
+
+
+            memoStorage.add({
+            recipientAddress: r.address.trim(),
+            senderAddress: publicKey?.toBase58() ?? "unknown",
+            amount: r.amount,
+            token: selectedToken.split(" ")[0],
+            memo: r.memo || `Payroll payment · ${new Date().toLocaleDateString()}`,
+            timestamp: new Date().toISOString(),
+            claimed: false,
+            claimTxSig: undefined,
+            });
           setRecipients([...results]);
         } catch (err) {
           const msg = err instanceof Error ? err.message : "Transfer failed";
@@ -310,7 +325,29 @@ const importCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
                       }}
                     />
                   </div>
+
                 </div>
+
+                  <div style={{ marginTop: "10px" }}>
+                    <p style={{ fontFamily:"var(--font-mono)",fontSize:"10px",color:"var(--text-muted)",marginBottom:"6px",letterSpacing:"0.05em" }}>
+                        🔒 ENCRYPTED MEMO (only recipient can read)
+                    </p>
+                    <input
+                        value={r.memo}
+                        onChange={e => updateRecipient(r.id, "memo", e.target.value)}
+                        placeholder="e.g. August 2025 Salary + Performance Bonus"
+                        disabled={r.status !== "pending"}
+                        style={{
+                        width:"100%",padding:"10px 12px",borderRadius:"8px",
+                        background:"rgba(0,212,255,0.04)",border:"1px solid var(--border-accent)",
+                        color:"var(--cyan)",fontFamily:"var(--font-display)",fontSize:"13px",
+                        outline:"none",boxSizing:"border-box"
+                        }}
+                    />
+                    </div>
+
+
+
 
                 {r.status === "sent" && r.txSig && (
                   <div style={{ marginTop:"10px",display:"flex",alignItems:"center",gap:"8px" }}>
