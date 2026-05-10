@@ -46,22 +46,32 @@ export default function InboxPage() {
     setIsFetching(true);
     setFetchError(null);
     try {
-      const { getReceiverClaimableUtxoFetcherFunction } = await import("@umbra-privacy/sdk");
-      const fetcher = getReceiverClaimableUtxoFetcherFunction({ client });
-      const raw = await (fetcher as any)(addr as any);
-      const list = (Array.isArray(raw) ? raw : []).map((u: any, i: number) => ({
-        id: u.id ?? u.commitment ?? `utxo-${i}`,
-        amount: u.amount ? (Number(u.amount) / 1_000_000).toFixed(2) : "?",
-        token: u.mint ?? "USDC",
-        status: "unclaimed" as const,
-        raw: u,
-      }));
-      setUtxos(list);
-    } catch (err) {
-      setFetchError(err instanceof Error ? err.message : "Could not fetch inbox");
-    } finally {
-      setIsFetching(false);
-    }
+  const { getClaimableUtxoScannerFunction } = await import("@umbra-privacy/sdk");
+  const scan = getClaimableUtxoScannerFunction({ client });
+
+  // Scan tree 0 from start — branded U32 type, cast as any
+  const result = await (scan as any)(0, 0);
+
+  // Combine received + publicReceived UTXOs (sent TO this wallet)
+  const allReceived = [
+    ...(result.received ?? []),
+    ...(result.publicReceived ?? []),
+  ];
+
+  const list = allReceived.map((u: any, i: number) => ({
+    id: u.insertionIndex?.toString() ?? `utxo-${i}`,
+    amount: u.amount ? (Number(u.amount) / 1_000_000).toFixed(2) : "?",
+    token: u.mint ?? "USDC",
+    status: "unclaimed" as const,
+    raw: u,
+  }));
+
+  setUtxos(list);
+} catch (err) {
+  setFetchError(err instanceof Error ? err.message : "Could not fetch inbox");
+} finally {
+  setIsFetching(false);
+}
   }, [client, addr]);
 
   useEffect(() => { fetchUtxos(); }, [fetchUtxos]);
@@ -70,24 +80,42 @@ export default function InboxPage() {
     if (!client) return;
     setClaimingId(utxo.id);
     setUtxos(prev => prev.map(u => u.id === utxo.id ? { ...u, status: "claiming" } : u));
-    try {
-      const { getReceiverClaimableUtxoClaimerFunction } = await import("@umbra-privacy/sdk");
-      const { getClaimReceiverClaimableUtxoIntoEncryptedBalanceProver } =
-        await import("@umbra-privacy/web-zk-prover");
-      const zkProver = getClaimReceiverClaimableUtxoIntoEncryptedBalanceProver();
-      const claimer = getReceiverClaimableUtxoClaimerFunction({ client }, { zkProver } as any);
-      const sigs = await (claimer as any)(utxo.raw);
-      const txSig = Array.isArray(sigs) ? sigs[0] : String(sigs);
-      setUtxos(prev => prev.map(u => u.id === utxo.id ? { ...u, status: "claimed", txSig } : u));
-      // Also mark any matching memo as claimed
-      memos.filter(m => !m.claimed).forEach(m => memoStorage.markClaimed(m.id, txSig));
-      setMemos(memoStorage.getForAddress(addr));
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Claim failed";
-      setUtxos(prev => prev.map(u => u.id === utxo.id ? { ...u, status: "failed", error: msg } : u));
-    } finally {
-      setClaimingId(null);
-    }
+   
+try {
+  // Use dynamic any-cast to avoid TypeScript name resolution issues
+  const sdk = await import("@umbra-privacy/sdk") as any;
+  const provers = await import("@umbra-privacy/web-zk-prover") as any;
+
+  const zkProver = (
+    provers.getReceiverClaimableUtxoToEncryptedBalanceClaimerProver ||
+    provers.getClaimReceiverClaimableUtxoIntoEncryptedBalanceProver
+  )();
+
+  const relayer = sdk.getUmbraRelayer({
+    apiEndpoint: "https://relayer.api.umbraprivacy.com",
+  });
+
+  const claim = sdk.getReceiverClaimableUtxoToEncryptedBalanceClaimerFunction(
+    { client },
+    { zkProver, relayer }
+  );
+
+  const claimResult = await claim([utxo.raw]);
+  const sigs = claimResult?.signatures ?? {};
+  const firstBatch = Object.values(sigs)[0] as string[] ?? [];
+  const txSig = firstBatch[0] ?? "confirmed";
+
+  setUtxos(prev => prev.map(u => u.id === utxo.id ? { ...u, status: "claimed", txSig } : u));
+  memos.filter(m => !m.claimed).forEach(m => memoStorage.markClaimed(m.id, txSig));
+  setMemos(memoStorage.getForAddress(addr));
+} catch (err) {
+  const msg = err instanceof Error ? err.message : "Claim failed";
+  setUtxos(prev => prev.map(u => u.id === utxo.id ? { ...u, status: "failed", error: msg } : u));
+} finally {
+  setClaimingId(null);
+}
+
+
   };
 
   const claimMemo = async (memo: PayrollMemo) => {
