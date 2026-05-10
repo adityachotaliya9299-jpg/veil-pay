@@ -2,7 +2,7 @@
 import { useState, useCallback, useEffect } from "react";
 import {
   getUserRegistrationFunction,
-  getUmbraAccountStateFunction,
+  getUserAccountQuerierFunction,
 } from "@umbra-privacy/sdk";
 import { isRegistrationError } from "@umbra-privacy/sdk/errors";
 import type { useUmbraClient } from "./useUmbraClient";
@@ -23,39 +23,34 @@ export function useUmbraAccount(client: Client) {
   const [isConfidential, setIsConfidential] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(false);
 
-  // Check on-chain registration state
   const checkRegistration = useCallback(async () => {
     if (!client) return;
     setRegStatus("checking");
     setRegError(null);
 
     try {
-      const getAccountState = getUmbraAccountStateFunction({ client });
-      const state = await getAccountState(client.signer.address);
+      const query = getUserAccountQuerierFunction({ client });
+      const result = await query(client.signer.address);
 
-      if (!state || !state.isInitialized) {
+      if (result.state === "non_existent") {
         setIsConfidential(false);
         setIsAnonymous(false);
         setRegStatus("unregistered");
       } else {
-        setIsConfidential(state.isConfidentialEnabled ?? false);
-        setIsAnonymous(state.isAnonymousEnabled ?? false);
+        // result.state === "exists"
+        const { data } = result;
+        setIsConfidential(data.isUserAccountX25519KeyRegistered ?? false);
+        setIsAnonymous(data.isUserCommitmentRegistered ?? false);
         setRegStatus("registered");
       }
     } catch (err) {
-      // Account not found = not registered
       const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes("not found") || msg.includes("does not exist") || msg.includes("AccountNotFound")) {
-        setRegStatus("unregistered");
-      } else {
-        setRegError(msg);
-        setRegStatus("error");
-        console.error("[useUmbraAccount] check:", err);
-      }
+      setRegError(msg);
+      setRegStatus("error");
+      console.error("[useUmbraAccount] check:", err);
     }
   }, [client]);
 
-  // Register user with Umbra
   const register = useCallback(async () => {
     if (!client) return;
     setRegStatus("registering");
@@ -105,7 +100,6 @@ export function useUmbraAccount(client: Client) {
     }
   }, [client]);
 
-  // Auto-check when client becomes ready
   useEffect(() => {
     if (client) {
       checkRegistration();
@@ -117,12 +111,5 @@ export function useUmbraAccount(client: Client) {
     }
   }, [client, checkRegistration]);
 
-  return {
-    regStatus,
-    regError,
-    isConfidential,
-    isAnonymous,
-    register,
-    checkRegistration,
-  };
+  return { regStatus, regError, isConfidential, isAnonymous, register, checkRegistration };
 }
