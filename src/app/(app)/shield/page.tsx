@@ -25,42 +25,45 @@ export default function ShieldPage() {
   const [history, setHistory] = useState<ShieldTx[]>([]);
 
   const shield = async () => {
-    if (!client || !amount || parseFloat(amount) <= 0) return;
-    setStatus("shielding"); setError(null); setTxSig(null);
-    try {
-      const sdk = await import("@umbra-privacy/sdk") as any;
-      const provers = await import("@umbra-privacy/web-zk-prover") as any;
+  if (!client || !amount || parseFloat(amount) <= 0) return;
+  setStatus("shielding"); setError(null); setTxSig(null);
+  try {
+    const sdk = await import("@umbra-privacy/sdk") as any;
 
-      const zkProver = (
-        provers.getPublicBalanceToEncryptedBalanceProver ||
-        provers.getDepositToEncryptedBalanceProver ||
-        provers.getPublicToEncryptedProver
-      )?.();
+    // Try multiple possible function names for deposit
+    const depositFn =
+      sdk.getPublicBalanceToEncryptedBalanceDepositorFunction ||
+      sdk.getPublicBalanceToEncryptedBalanceDirectDepositorFunction ||
+      sdk.getDepositToEncryptedBalanceFunction;
 
-      const deposit = sdk.getPublicBalanceToEncryptedBalanceDepositorFunction
-        ? sdk.getPublicBalanceToEncryptedBalanceDepositorFunction(
-            { client },
-            zkProver ? { zkProver } : {}
-          )
-        : sdk.getPublicBalanceToEncryptedBalanceDirectDepositorFunction?.(
-            { client }, {}
-          );
+    if (!depositFn) throw new Error("Deposit function not available in this SDK version");
 
-      const mint = TOKENS[token].mint;
-      const rawAmount = BigInt(Math.floor(parseFloat(amount) * 10 ** TOKENS[token].decimals));
+    const deposit = depositFn({ client }, {});
 
-      const sigs = await deposit({ mint, amount: rawAmount });
-      const sig = Array.isArray(sigs) ? sigs[0] : Object.values(sigs?.signatures ?? {})[0]?.[0] ?? "confirmed";
+    const mint = TOKENS[token].mint;
+    const rawAmount = BigInt(Math.floor(parseFloat(amount) * 10 ** TOKENS[token].decimals));
 
-      setTxSig(sig);
-      setStatus("done");
-      setHistory(prev => [{ amount, token, txSig: sig, date: new Date().toLocaleString() }, ...prev]);
-      setAmount("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Shield failed");
-      setStatus("error");
-    }
-  };
+    // Deposit to own encrypted balance — no destinationAddress needed
+    const result = await (deposit as any)({
+      mint: mint as any,
+      amount: rawAmount,
+    });
+
+    const sig = Array.isArray(result)
+      ? result[0]
+      : result?.signatures
+        ? Object.values(result.signatures)[0]?.[0]
+        : "confirmed";
+
+    setTxSig(String(sig));
+    setStatus("done");
+    setHistory(prev => [{ amount, token, txSig: String(sig), date: new Date().toLocaleString() }, ...prev]);
+    setAmount("");
+  } catch (err) {
+    setError(err instanceof Error ? err.message : "Shield failed");
+    setStatus("error");
+  }
+};
 
   if (!connected) {
     return (
