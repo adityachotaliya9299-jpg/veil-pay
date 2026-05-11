@@ -173,7 +173,13 @@ const importCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
             });
           setRecipients([...results]);
         } catch (err) {
-          const msg = err instanceof Error ? err.message : "Transfer failed";
+          let msg = err instanceof Error ? err.message : "Transfer failed";
+          // Give a helpful message for the most common error
+          if (msg.toLowerCase().includes("not registered")) {
+            msg = `Recipient must register with Umbra first. Share veilpay → Dashboard with them to register.`;
+          } else if (msg.toLowerCase().includes("simulation failed")) {
+            msg = "Transaction simulation failed — ensure recipient is registered with Umbra.";
+          }
           results[idx] = { ...results[idx], status: "failed", error: msg };
           setRecipients([...results]);
         }
@@ -186,8 +192,7 @@ const importCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
         token: selectedToken,
         recipients: results.filter(r => validRecipients.find(v => v.id === r.id)),
         totalAmount,
-        status: results.every(r => r.status === "sent") ? "complete"
-          : results.some(r => r.status === "sent") ? "partial" : "complete",
+        status: results.every(r => r.status === "sent") ? "complete": results.some(r => r.status === "sent") ? "partial" : "failed",
       };
       historyStorage.add(run);
       setRunHistory(prev => [run, ...prev]);
@@ -389,20 +394,7 @@ const importCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
             </p>
             </div>
 
-            <div style={{ display:"flex",gap:"10px",marginBottom:"8px" }}>
-              <input ref={fileInputRef} type="file" accept=".csv" onChange={importCSV} style={{ display:"none" }} />
-                <button onClick={() => fileInputRef.current?.click()} style={{
-                    display:"flex",alignItems:"center",gap:"8px",padding:"8px 16px",borderRadius:"8px",cursor:"pointer",
-                    background:"var(--bg-card)",border:"1px solid var(--border)",
-                    color:"var(--text-muted)",fontFamily:"var(--font-display)",fontSize:"12px"
-                }}>
-                    📎 Import CSV
-                </button>
-                <p style={{ fontFamily:"var(--font-mono)",fontSize:"10px",color:"var(--text-muted)",alignSelf:"center" }}>
-                    Format: name, address, amount
-                </p>
-                </div>
-            
+                       
 
           <button onClick={addRecipient} disabled={isSending} style={{
             display:"flex",alignItems:"center",gap:"8px",
