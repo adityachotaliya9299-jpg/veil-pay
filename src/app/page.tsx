@@ -244,63 +244,119 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Right: floating cards */}
-          <div className="animate-fade-up-2" style={{ position: "relative", height: "520px" }}>
-            {/* Main photo */}
-            <AbstractPhoto variant="aurora" style={{
-              width: "100%", height: "320px", borderRadius: "20px",
-              border: "1px solid rgba(139,92,246,0.2)",
-              position: "absolute", top: 0, left: 0,
-            }} />
+          
+          {/* Right: product mockup */}
+<div className="animate-fade-up-2" style={{ position: "relative", height: "520px" }}>
 
-            {/* Floating stat card 1 */}
-            <div className="glass animate-float" style={{
-              position: "absolute", bottom: "80px", left: "-32px",
-              padding: "16px 20px", borderRadius: "16px",
-              border: "1px solid rgba(190,255,0,0.15)",
-              background: "rgba(3,3,5,0.9)"
-            }}>
-              <p className="label" style={{ marginBottom: "4px", color: "var(--text-3)" }}>On-chain visibility</p>
-              <p style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "28px", color: "var(--lime)" }}>0%</p>
-            </div>
+  {/* Main product card */}
+  <div style={{
+    position: "absolute", top: 0, left: 0, right: 0,
+    borderRadius: "20px", background: "#0a0a0f",
+    border: "1px solid rgba(255,255,255,0.08)",
+    overflow: "hidden", height: "360px"
+  }}>
+    {/* Card header bar */}
+    <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <div style={{ display: "flex", gap: "5px" }}>
+          {["#EF4444", "#F59E0B", "#22C55E"].map(c => <div key={c} style={{ width: "9px", height: "9px", borderRadius: "50%", background: c }} />)}
+        </div>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "var(--text-3)" }}>veilpay — payroll</span>
+      </div>
+      <div style={{ display: "flex", gap: "6px" }}>
+        <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: "var(--lime)", boxShadow: "0 0 6px var(--lime)" }} />
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "var(--lime)" }}>LIVE</span>
+      </div>
+    </div>
 
-            {/* Floating memo card */}
-            <div className="glass" style={{
-              position: "absolute", bottom: "40px", right: "-20px",
-              padding: "14px 18px", borderRadius: "14px",
-              border: "1px solid rgba(255,255,255,0.08)",
-              background: "rgba(3,3,5,0.92)", animation: "float 5s 2s ease-in-out infinite",
-              maxWidth: "220px"
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-                <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--green)" }} />
-                <p className="label" style={{ color: "var(--text-3)" }}>Encrypted Memo</p>
-              </div>
-              <p style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "var(--text-2)" }}>
-                ██████ 2025 ████ +<br />
-                ████████ Bonus
-              </p>
-              <p style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "var(--lime)", marginTop: "6px" }}>Only recipient can read ↗</p>
-            </div>
+    {/* Card content */}
+    <div style={{ padding: "16px 20px" }}>
+      <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "13px", color: "var(--text)", marginBottom: "14px" }}>New Payroll Run</p>
 
-            {/* Floating UTXO card */}
-            <div className="glass" style={{
-              position: "absolute", top: "300px", right: "20px",
-              padding: "14px 18px", borderRadius: "14px",
-              border: "1px solid rgba(255,255,255,0.07)",
-              background: "rgba(3,3,5,0.92)",
-              animation: "float 7s 1s ease-in-out infinite"
-            }}>
-              <p className="label" style={{ color: "var(--text-3)", marginBottom: "6px" }}>Private UTXO</p>
-              <p style={{ fontFamily: "var(--font-mono)", fontSize: "20px", color: "var(--text)", fontWeight: 700 }}>
-                5,000 <span style={{ fontSize: "13px", color: "var(--text-3)" }}>USDC</span>
-              </p>
-              <div style={{ display: "flex", alignItems: "center", gap: "4px", marginTop: "4px" }}>
-                <Lock size={10} color="var(--lime)" />
-                <span className="label" style={{ color: "var(--lime)", fontSize: "9px" }}>SHIELDED</span>
-              </div>
+      {/* Recipient rows */}
+      {[
+        { name: "Alice Chen",    role: "Engineering",  amount: "4,500", status: "sent" },
+        { name: "Bob Torres",    role: "Design",       amount: "3,800", status: "sending" },
+        { name: "Sara Kim",      role: "Marketing",    amount: "3,200", status: "pending" },
+      ].map((r, i) => (
+        <div key={r.name} style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "10px 12px", borderRadius: "10px", marginBottom: "8px",
+          background: i === 0 ? "rgba(34,197,94,0.06)" : i === 1 ? "rgba(190,255,0,0.04)" : "rgba(255,255,255,0.03)",
+          border: `1px solid ${i === 0 ? "rgba(34,197,94,0.15)" : i === 1 ? "rgba(190,255,0,0.1)" : "rgba(255,255,255,0.05)"}`,
+          transition: "all 0.3s"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={{
+              width: "28px", height: "28px", borderRadius: "50%", flexShrink: 0,
+              background: `hsl(${i * 80 + 140}, 60%, 20%)`, border: "1px solid rgba(255,255,255,0.1)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "11px",
+              color: `hsl(${i * 80 + 140}, 70%, 65%)`
+            }}>{r.name[0]}</div>
+            <div>
+              <p style={{ fontFamily: "var(--font-display)", fontSize: "12px", color: "var(--text)", fontWeight: 500 }}>{r.name}</p>
+              <p style={{ fontFamily: "var(--font-mono)", fontSize: "9px", color: "var(--text-3)" }}>{r.role}</p>
             </div>
           </div>
+          <div style={{ textAlign: "right" }}>
+            <p style={{ fontFamily: "var(--font-mono)", fontSize: "12px", fontWeight: 700, color: "var(--text)", marginBottom: "2px" }}>{r.amount} <span style={{ color: "var(--text-3)", fontSize: "9px" }}>USDC</span></p>
+            <span style={{
+              fontFamily: "var(--font-mono)", fontSize: "9px", letterSpacing: "0.06em",
+              padding: "2px 6px", borderRadius: "4px",
+              background: i === 0 ? "rgba(34,197,94,0.12)" : i === 1 ? "rgba(190,255,0,0.1)" : "rgba(255,255,255,0.05)",
+              color: i === 0 ? "#22C55E" : i === 1 ? "var(--lime)" : "var(--text-3)"
+            }}>
+              {r.status.toUpperCase()}
+            </span>
+          </div>
+        </div>
+      ))}
+
+      {/* Send button */}
+      <button style={{
+        width: "100%", marginTop: "8px", padding: "11px", borderRadius: "10px",
+        background: "var(--lime)", border: "none", cursor: "pointer",
+        fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "13px", color: "#030305",
+        display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+        boxShadow: "0 4px 20px rgba(190,255,0,0.25)"
+      }}>
+        <Zap size={13} /> Send Private Payroll
+      </button>
+    </div>
+  </div>
+
+  {/* Floating stat card */}
+  <div className="glass animate-float" style={{
+    position: "absolute", bottom: "70px", left: "-24px",
+    padding: "14px 18px", borderRadius: "14px",
+    border: "1px solid rgba(190,255,0,0.15)",
+    background: "rgba(3,3,5,0.95)"
+  }}>
+    <p className="label" style={{ marginBottom: "4px" }}>On-chain exposure</p>
+    <p style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "26px", color: "var(--lime)" }}>0%</p>
+  </div>
+
+  {/* Floating memo card */}
+  <div className="glass" style={{
+    position: "absolute", bottom: "24px", right: "0px",
+    padding: "12px 16px", borderRadius: "12px",
+    border: "1px solid rgba(255,255,255,0.07)",
+    background: "rgba(3,3,5,0.95)",
+    animation: "float 5s 1.5s ease-in-out infinite",
+    maxWidth: "200px"
+  }}>
+    <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
+      <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: "var(--green)" }} />
+      <p className="label" style={{ fontSize: "9px", color: "var(--text-3)" }}>Encrypted Memo</p>
+    </div>
+    <p style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "var(--text-2)", lineHeight: 1.5 }}>
+      ████ 2025 ████<br />+ Performance
+    </p>
+    <p style={{ fontFamily: "var(--font-mono)", fontSize: "9px", color: "var(--lime)", marginTop: "5px" }}>Only Alice can read ↗</p>
+  </div>
+
+</div>
         </div>
       </section>
 
