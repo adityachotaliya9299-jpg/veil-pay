@@ -13,7 +13,7 @@ type ViewingKeyExport = {
 };
 
 export default function CompliancePage() {
-  const { connected, publicKey } = useWallet();
+  const { connected, publicKey,signMessage  } = useWallet();
   const addr = publicKey?.toBase58() ?? ""; 
   const { client } = useUmbraClient();
 
@@ -27,45 +27,42 @@ export default function CompliancePage() {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const generateViewingKey = async () => {
-    if (!client) return;
-    setIsGenerating(true);
-    setError(null);
+  if (!signMessage) { setError("Wallet not connected"); return; }
+  setIsGenerating(true);
+  setError(null);
 
-    try {
-      let keyBytes: Uint8Array;
-      let scopeLabel: string;
-      const y = parseInt(year);
-      const m = parseInt(month);
-      const d = parseInt(day);
+  try {
+    // Derive a deterministic scoped viewing key by signing a scope-specific message
+    // This is cryptographically sound — unique per wallet per scope
+    const scopeStr = scope === "yearly"
+      ? `veilpay:viewing-key:yearly:${year}`
+      : scope === "monthly"
+      ? `veilpay:viewing-key:monthly:${year}-${String(month).padStart(2,"0")}`
+      : `veilpay:viewing-key:daily:${year}-${String(month).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
 
-      if (scope === "yearly") {
-        keyBytes = await (client as any).yearlyViewingKey?.generate(y)
-          ?? await (client as any).masterViewingKey?.derive({ year: y });
-        scopeLabel = `Yearly ${y}`;
-      } else if (scope === "monthly") {
-        keyBytes = await (client as any).monthlyViewingKey?.generate(y, m)
-          ?? await (client as any).masterViewingKey?.derive({ year: y, month: m });
-        scopeLabel = `Monthly ${y}-${String(m).padStart(2, "0")}`;
-      } else {
-        keyBytes = await (client as any).dailyViewingKey?.generate(y, m, d)
-          ?? await (client as any).masterViewingKey?.derive({ year: y, month: m, day: d });
-        scopeLabel = `Daily ${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-      }
+    const msgBytes = new TextEncoder().encode(scopeStr);
+    const sig = await signMessage(msgBytes);
+    const hex = Buffer.from(sig).toString("hex");
 
-      const hex = Buffer.from(keyBytes).toString("hex");
-      const entry: ViewingKeyExport = {
-        scope: scopeLabel,
-        key: hex,
-        exportedAt: new Date().toLocaleString(),
-      };
+    const scopeLabel = scope === "yearly"
+      ? `Yearly ${year}`
+      : scope === "monthly"
+      ? `Monthly ${year}-${String(month).padStart(2,"0")}`
+      : `Daily ${year}-${String(month).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
 
-      setExportedKeys(prev => [entry, ...prev]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to generate viewing key. Make sure your Umbra client is connected.");
-    } finally {
-      setIsGenerating(false);
-    }
-  };
+    const entry: ViewingKeyExport = {
+      scope: scopeLabel,
+      key: hex,
+      exportedAt: new Date().toLocaleString(),
+    };
+
+    setExportedKeys(prev => [entry, ...prev]);
+  } catch (err) {
+    setError(err instanceof Error ? err.message : "Failed to generate viewing key");
+  } finally {
+    setIsGenerating(false);
+  }
+};
 
   const copyKey = (key: string) => {
     navigator.clipboard.writeText(key);
