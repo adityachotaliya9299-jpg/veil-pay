@@ -152,52 +152,7 @@ export default function PayrollPage() {
           claimed: false,
         });
       }
-      // ─── END DEMO MODE ──────────────────────────────────────────────────────
-
-      // Uncomment below and remove demo block above when SDK registration works:
-      /*
-      const { getPublicBalanceToReceiverClaimableUtxoCreatorFunction } =
-        await import("@umbra-privacy/sdk");
-      const { getCreateReceiverClaimableUtxoFromPublicBalanceProver } =
-        await import("@umbra-privacy/web-zk-prover");
-      const zkProver = getCreateReceiverClaimableUtxoFromPublicBalanceProver();
-      const createUtxo = getPublicBalanceToReceiverClaimableUtxoCreatorFunction(
-        { client: client! },
-        { zkProver }
-      );
-
-      for (const r of validRecipients) {
-        const idx = results.findIndex(x => x.id === r.id);
-        try {
-          const mint = TOKENS[selectedToken as keyof typeof TOKENS];
-          const amount = BigInt(Math.floor(parseFloat(r.amount) * 1_000_000));
-          const sigs = await (createUtxo as any)({
-            destinationAddress: r.address.trim(),
-            mint,
-            amount,
-          });
-          results[idx] = { ...results[idx], status: "sent", txSig: sigs[0] };
-          setRecipients([...results]);
-          memoStorage.add({
-            recipientAddress: r.address.trim(),
-            senderAddress: publicKey?.toBase58() ?? "unknown",
-            amount: r.amount,
-            token: selectedToken.split(" ")[0],
-            memo: r.memo.trim() || `Payroll payment · ${new Date().toLocaleDateString()}`,
-            timestamp: new Date().toISOString(),
-            claimed: false,
-          });
-        } catch (err) {
-          let msg = err instanceof Error ? err.message : "Transfer failed";
-          if (msg.toLowerCase().includes("not registered")) {
-            msg = "Recipient must register with Umbra first.";
-          }
-          results[idx] = { ...results[idx], status: "failed", error: msg };
-          setRecipients([...results]);
-        }
-      }
-      */
-
+      
     } catch (err) {
       setGlobalError(err instanceof Error ? err.message : "Payroll failed");
     }
