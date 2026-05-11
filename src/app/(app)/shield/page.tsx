@@ -14,7 +14,7 @@ const TOKENS: Record<string, { mint: string; decimals: number }> = {
 type ShieldTx = { amount: string; token: string; txSig: string; date: string };
 
 export default function ShieldPage() {
-  const { connected } = useWallet();
+  const { connected, publicKey } = useWallet();
   const { client } = useUmbraClient();
 
   const [token, setToken] = useState("USDC");
@@ -45,6 +45,7 @@ export default function ShieldPage() {
 
     // Deposit to own encrypted balance — no destinationAddress needed
     const result = await (deposit as any)({
+      destinationAddress: publicKey?.toBase58() as any,
       mint: mint as any,
       amount: rawAmount,
     });
