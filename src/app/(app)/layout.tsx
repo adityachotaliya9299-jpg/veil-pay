@@ -1,10 +1,13 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { ClientOnly } from "@/components/ClientOnly";
-import { Shield, LayoutDashboard, Users, Zap, Eye, LogOut, Inbox } from "lucide-react";
-
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import {
+  Shield, LayoutDashboard, Users, Zap,
+  Eye, LogOut, Inbox, Bell
+} from "lucide-react";
+ 
 const NAV = [
   { href: "/dashboard",  label: "Dashboard",  icon: LayoutDashboard },
   { href: "/team",       label: "Team",        icon: Users },
@@ -13,89 +16,69 @@ const NAV = [
   { href: "/inbox",      label: "Inbox",       icon: Inbox },
   { href: "/compliance", label: "Compliance",  icon: Eye },
 ];
-
+ 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-
+ 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)" }}>
-
-      {/* Subtle dot grid */}
-      <div className="dot-grid" style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none", opacity: 0.5 }} />
-
-      {/* Sidebar */}
+ 
+      {/* Subtle grid */}
+      <div className="grid-bg" style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none", opacity: 0.4 }} />
+ 
+      {/* ── SIDEBAR ── */}
       <aside style={{
-        width: "228px", flexShrink: 0, position: "sticky", top: 0, height: "100vh",
-        borderRight: "1px solid rgba(255,255,255,0.05)",
-        display: "flex", flexDirection: "column", padding: "20px 12px",
-        background: "rgba(2,4,10,0.8)",
+        width: "220px", flexShrink: 0, position: "sticky", top: 0, height: "100vh",
+        borderRight: "1px solid var(--border)",
+        display: "flex", flexDirection: "column", padding: "16px 10px",
+        background: "rgba(3,3,5,0.9)",
         backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
-        zIndex: 50, overflow: "hidden"
+        zIndex: 50
       }}>
-        {/* Sidebar glow */}
-        <div style={{
-          position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)",
-          width: "200px", height: "200px", borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(0,212,255,0.05) 0%, transparent 70%)",
-          pointerEvents: "none"
-        }} />
-
+ 
         {/* Logo */}
-        <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "10px", marginBottom: "32px", padding: "8px 12px", borderRadius: "10px" }}>
-          <div style={{
-            width: "30px", height: "30px", borderRadius: "8px",
-            background: "rgba(0,212,255,0.1)", border: "1px solid rgba(0,212,255,0.2)",
-            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
-          }}>
-            <Shield size={14} color="var(--cyan)" />
+        <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "9px", padding: "10px 10px", marginBottom: "24px", borderRadius: "10px", transition: "background 0.2s" }}
+          onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.background = "var(--bg-2)"}
+          onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.background = "transparent"}>
+          <div style={{ width: "26px", height: "26px", borderRadius: "7px", background: "var(--lime-dim)", border: "1px solid var(--border-lime)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <Shield size={13} color="var(--lime)" />
           </div>
-          <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "16px", letterSpacing: "-0.03em", color: "var(--text)" }}>
-            veil<span style={{ color: "var(--cyan)" }}>pay</span>
+          <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "15px", letterSpacing: "-0.03em", color: "var(--text)" }}>
+            veil<span style={{ color: "var(--lime)" }}>pay</span>
           </span>
         </Link>
-
-        {/* Nav section label */}
-        <p style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.12em", textTransform: "uppercase", padding: "0 12px", marginBottom: "8px" }}>
-          Menu
-        </p>
-
+ 
+        {/* Section label */}
+        <p className="label" style={{ padding: "0 10px", marginBottom: "6px", fontSize: "9px" }}>NAVIGATION</p>
+ 
         {/* Nav items */}
-        <nav style={{ display: "flex", flexDirection: "column", gap: "2px", flex: 1 }}>
+        <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
           {NAV.map(({ href, label, icon: Icon }) => {
             const active = pathname === href || pathname.startsWith(href + "/");
             return (
               <Link key={href} href={href} style={{ textDecoration: "none" }}>
                 <div style={{
-                  display: "flex", alignItems: "center", gap: "10px",
-                  padding: "10px 12px", borderRadius: "10px",
-                  background: active ? "rgba(0,212,255,0.08)" : "transparent",
-                  border: `1px solid ${active ? "rgba(0,212,255,0.15)" : "transparent"}`,
-                  color: active ? "var(--cyan)" : "var(--text-muted)",
-                  cursor: "pointer", transition: "all 0.2s",
-                  position: "relative"
+                  display: "flex", alignItems: "center", gap: "9px",
+                  padding: "9px 10px", borderRadius: "10px",
+                  background: active ? "var(--lime-dim)" : "transparent",
+                  border: `1px solid ${active ? "var(--border-lime)" : "transparent"}`,
+                  color: active ? "var(--lime)" : "var(--text-2)",
+                  cursor: "pointer", transition: "all 0.15s",
                 }}
                 onMouseEnter={e => {
                   if (!active) {
-                    (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)";
+                    (e.currentTarget as HTMLDivElement).style.background = "var(--bg-2)";
                     (e.currentTarget as HTMLDivElement).style.color = "var(--text)";
                   }
                 }}
                 onMouseLeave={e => {
                   if (!active) {
                     (e.currentTarget as HTMLDivElement).style.background = "transparent";
-                    (e.currentTarget as HTMLDivElement).style.color = "var(--text-muted)";
+                    (e.currentTarget as HTMLDivElement).style.color = "var(--text-2)";
                   }
-                }}
-                >
-                  {active && (
-                    <div style={{
-                      position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)",
-                      width: "3px", height: "16px", borderRadius: "0 2px 2px 0",
-                      background: "var(--cyan)", boxShadow: "0 0 8px var(--cyan)"
-                    }} />
-                  )}
-                  <Icon size={15} strokeWidth={active ? 2.5 : 2} />
-                  <span style={{ fontFamily: "var(--font-display)", fontWeight: active ? 600 : 500, fontSize: "14px" }}>
+                }}>
+                  <Icon size={14} strokeWidth={active ? 2.5 : 2} />
+                  <span style={{ fontFamily: "var(--font-display)", fontWeight: active ? 600 : 400, fontSize: "13px" }}>
                     {label}
                   </span>
                 </div>
@@ -103,50 +86,53 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-
+ 
         {/* Bottom */}
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "12px" }}>
+        <div style={{ borderTop: "1px solid var(--border)", paddingTop: "10px" }}>
+          {/* Network badge */}
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 10px", marginBottom: "4px" }}>
+            <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--lime)", boxShadow: "0 0 6px var(--lime)" }} />
+            <span className="label" style={{ color: "var(--text-3)", fontSize: "9px" }}>
+              {process.env.NEXT_PUBLIC_NETWORK ?? "mainnet"}
+            </span>
+          </div>
           <Link href="/" style={{ textDecoration: "none" }}>
             <div style={{
-              display: "flex", alignItems: "center", gap: "10px",
-              padding: "10px 12px", borderRadius: "10px", cursor: "pointer",
-              color: "var(--text-muted)", transition: "all 0.2s"
+              display: "flex", alignItems: "center", gap: "9px",
+              padding: "9px 10px", borderRadius: "10px", cursor: "pointer",
+              color: "var(--text-3)", transition: "all 0.15s"
             }}
-            onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.color = "var(--text)"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.color = "var(--text-muted)"; }}>
-              <LogOut size={14} />
-              <span style={{ fontFamily: "var(--font-display)", fontSize: "13px" }}>Back to Home</span>
+            onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.color = "var(--text)"; (e.currentTarget as HTMLDivElement).style.background = "var(--bg-2)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.color = "var(--text-3)"; (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}>
+              <LogOut size={13} />
+              <span style={{ fontFamily: "var(--font-display)", fontSize: "12px" }}>Back to Home</span>
             </div>
           </Link>
         </div>
       </aside>
-
-      {/* Main content */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: "100vh", position: "relative", zIndex: 1 }}>
+ 
+      {/* ── MAIN ── */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: "100vh", zIndex: 1, position: "relative" }}>
+ 
         {/* Top bar */}
         <header style={{
-          height: "64px", position: "sticky", top: 0, zIndex: 40,
-          borderBottom: "1px solid rgba(255,255,255,0.05)",
+          height: "56px", position: "sticky", top: 0, zIndex: 40,
+          borderBottom: "1px solid var(--border)",
           display: "flex", alignItems: "center", justifyContent: "flex-end",
-          padding: "0 32px", gap: "12px",
-          background: "rgba(2,4,10,0.7)",
+          padding: "0 28px", gap: "10px",
+          background: "rgba(3,3,5,0.85)",
           backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)"
         }}>
-          <div style={{
-            fontFamily: "var(--font-mono)", fontSize: "11px", color: "var(--text-muted)",
-            padding: "5px 12px", borderRadius: "8px",
-            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)",
-            letterSpacing: "0.08em"
-          }}>
-            {process.env.NEXT_PUBLIC_NETWORK ?? "mainnet"}
-          </div>
+          <button style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--bg-1)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-3)" }}>
+            <Bell size={13} />
+          </button>
           <ClientOnly>
             <WalletMultiButton />
           </ClientOnly>
         </header>
-
-        {/* Page content */}
-        <main style={{ flex: 1, padding: "40px", overflowY: "auto" }}>
+ 
+        {/* Content */}
+        <main style={{ flex: 1, padding: "36px 40px", overflowY: "auto" }}>
           {children}
         </main>
       </div>
