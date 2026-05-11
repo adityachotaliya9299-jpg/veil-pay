@@ -50,7 +50,7 @@ export default function InboxPage() {
   const scan = getClaimableUtxoScannerFunction({ client });
 
   // Scan tree 0 from start — branded U32 type, cast as any
- const result = await (scan as any)(0n, 0n); 
+const result = await (scan as any)(BigInt(0), BigInt(0));
 
   // Combine received + publicReceived UTXOs (sent TO this wallet)
   const allReceived = [
