@@ -13,7 +13,8 @@ type ViewingKeyExport = {
 };
 
 export default function CompliancePage() {
-  const { connected } = useWallet();
+  const { connected, publicKey } = useWallet();
+  const addr = publicKey?.toBase58() ?? ""; 
   const { client } = useUmbraClient();
 
   const [year, setYear] = useState(new Date().getFullYear().toString());
@@ -81,6 +82,53 @@ export default function CompliancePage() {
     const a = document.createElement("a");
     a.href = url; a.download = "veilpay-viewing-keys.csv"; a.click();
   };
+
+  const exportAuditorPackage = () => {
+  const pkg = {
+    generatedAt: new Date().toISOString(),
+    wallet: addr,
+    network: "mainnet",
+    privacyLayer: "Umbra SDK",
+
+    viewingKeys: exportedKeys.map((k) => ({
+      scope: k.scope,
+      key: k.key,
+      exportedAt: k.exportedAt,
+      instructions:
+        "Use with Umbra SDK getClaimableUtxoScannerFunction to decrypt UTXOs in this scope",
+    })),
+
+    auditInstructions: {
+      step1: "Install @umbra-privacy/sdk",
+      step2:
+        "Create client with the provided viewing key",
+      step3:
+        "Call getClaimableUtxoScannerFunction to scan UTXOs",
+      step4:
+        "Decrypt matching UTXOs using the scoped viewing key",
+      documentation:
+        "https://sdk.umbraprivacy.com/sdk/compliance",
+    },
+
+    disclaimer:
+      "This package provides read-only access to UTXO activity within the specified time scope only.",
+  };
+
+  const blob = new Blob(
+    [JSON.stringify(pkg, null, 2)],
+    { type: "application/json" }
+  );
+
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+
+  a.href = url;
+  a.download = "veilpay-auditor-package.json";
+  a.click();
+};
+
+  
 
   if (!connected) {
     return (
@@ -247,13 +295,46 @@ export default function CompliancePage() {
               <p style={{ fontFamily:"var(--font-display)",fontWeight:700,fontSize:"15px",color:"var(--text)",marginBottom:"4px" }}>Exported Viewing Keys</p>
               <p style={{ fontFamily:"var(--font-mono)",fontSize:"11px",color:"var(--text-muted)" }}>{exportedKeys.length} key{exportedKeys.length !== 1 ? "s" : ""} generated this session</p>
             </div>
-            <button onClick={exportCSV} style={{
-              display:"flex",alignItems:"center",gap:"8px",padding:"10px 18px",borderRadius:"8px",cursor:"pointer",
-              background:"var(--cyan-dim)",border:"1px solid var(--border-accent)",
-              color:"var(--cyan)",fontFamily:"var(--font-display)",fontWeight:600,fontSize:"13px"
-            }}>
-              <Download size={14} /> Export CSV
-            </button>
+           <div style={{ display:"flex", gap:"10px" }}>
+
+  <button onClick={exportCSV} style={{
+    display:"flex",
+    alignItems:"center",
+    gap:"8px",
+    padding:"10px 18px",
+    borderRadius:"8px",
+    cursor:"pointer",
+    background:"var(--cyan-dim)",
+    border:"1px solid var(--border-accent)",
+    color:"var(--cyan)",
+    fontFamily:"var(--font-display)",
+    fontWeight:600,
+    fontSize:"13px"
+  }}>
+    <Download size={14} />
+    Export CSV
+  </button>
+
+  <button onClick={exportAuditorPackage} style={{
+    display:"flex",
+    alignItems:"center",
+    gap:"8px",
+    padding:"10px 18px",
+    borderRadius:"8px",
+    cursor:"pointer",
+    background:"var(--bg-card)",
+    border:"1px solid var(--border)",
+    color:"var(--text-muted)",
+    fontFamily:"var(--font-display)",
+    fontWeight:600,
+    fontSize:"13px"
+  }}>
+    📦 Auditor Package
+  </button>
+
+</div>
+
+
           </div>
 
           <div style={{ display:"flex",flexDirection:"column",gap:"10px" }}>
