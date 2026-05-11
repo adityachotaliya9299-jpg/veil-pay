@@ -16,7 +16,7 @@ const TOKENS = {
   "USDC (Mainnet)": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
   "USDC (Devnet)":  "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
 };
-const { connected, publicKey } = useWallet();
+
 
 type Recipient = {
   id: string;
@@ -49,7 +49,7 @@ function Tag({ children, color }: { children: React.ReactNode; color: string }) 
 }
 
 export default function PayrollPage() {
-  const { connected } = useWallet();
+  const { connected,publicKey } = useWallet();
   const { client } = useUmbraClient();
 
   const [selectedToken, setSelectedToken] = useState("USDC (Mainnet)");
@@ -60,6 +60,7 @@ export default function PayrollPage() {
   const [runHistory, setRunHistory] = useState<PayrollRun[]>([]);
   const [expandedRun, setExpandedRun] = useState<string | null>(null);
   const [globalError, setGlobalError] = useState<string | null>(null);
+ 
 
   useEffect(() => {
   setRunHistory(historyStorage.getAll() as any);
