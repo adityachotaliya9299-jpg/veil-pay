@@ -35,7 +35,7 @@ type PayrollRun = {
   token: string;
   recipients: Recipient[];
   totalAmount: number;
-  status: "draft" | "sending" | "complete" | "partial";
+  status: "draft" | "sending" | "complete" | "partial" | "failed";
 };
 
 function Tag({ children, color }: { children: React.ReactNode; color: string }) {

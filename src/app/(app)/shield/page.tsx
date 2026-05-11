@@ -49,11 +49,12 @@ export default function ShieldPage() {
       amount: rawAmount,
     });
 
-    const sig = Array.isArray(result)
-      ? result[0]
-      : result?.signatures
-        ? Object.values(result.signatures)[0]?.[0]
-        : "confirmed";
+   const res = result as any;
+  const sig: string = Array.isArray(res)
+    ? res[0]
+    : res?.signatures
+      ? (Object.values(res.signatures) as string[][])[0]?.[0] ?? "confirmed"
+      : "confirmed";
 
     setTxSig(String(sig));
     setStatus("done");
