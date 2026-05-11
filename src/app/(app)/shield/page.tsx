@@ -101,7 +101,7 @@ export default function ShieldPage() {
   }
 
   return (
-    <div style={{ maxWidth: "620px" }}>
+    <div style={{ maxWidth: "620px", margin: "0 auto" }}>
       {/* Header */}
       <div style={{ marginBottom: "40px" }}>
         <p style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "var(--cyan)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "8px" }}>Shield</p>
