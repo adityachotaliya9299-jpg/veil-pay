@@ -519,3 +519,11 @@ body::before {
   --cyan-dim:       var(--lime-dim);
   --cyan-glow:      var(--lime-glow);
 }
+
+/* Ensure all pages use new font */
+h1, h2, h3, h4, p, button, input, select, textarea {
+  font-family: var(--font-display);
+}
+code, pre, .mono {
+  font-family: var(--font-mono);
+}

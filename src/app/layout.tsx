@@ -6,9 +6,9 @@ import { Providers } from "./providers";
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
-export const metadata: Metadata = {
-  title: "Veil Pay - Private Payroll on Solana",
-  description: "Pay your team privately on Solana using Umbra's confidential transfer layer",
+export const metadata = {
+  title: "VeilPay - Private Payroll on Solana",
+  description: "The complete privacy layer for Solana teams. Private payroll, stealth inbox, encrypted balances.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
