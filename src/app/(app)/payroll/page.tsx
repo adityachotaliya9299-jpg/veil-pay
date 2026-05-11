@@ -384,9 +384,11 @@ export default function PayrollPage() {
                     <p style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "var(--green)" }}>
                       Private UTXO created — tx: {r.txSig.slice(0, 20)}...
                     </p>
+                    {r.txSig && !r.txSig.startsWith("http") && r.txSig.length > 60 && (
                     <a href={`https://solscan.io/tx/${r.txSig}`} target="_blank" rel="noopener noreferrer">
                       <ExternalLink size={11} color="var(--green)" />
                     </a>
+                  )}
                   </div>
                 )}
                 {r.status === "failed" && r.error && (
