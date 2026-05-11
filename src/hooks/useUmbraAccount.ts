@@ -62,7 +62,7 @@ export function useUmbraAccount(client: Client) {
       const registerFn = getUserRegistrationFunction({ client }, { zkProver });
       const sigs = await registerFn({
         confidential: true,
-        anonymous: true,
+        anonymous: false,
         callbacks: {
           userAccountInitialisation: {
             pre: async () => console.log("[Umbra] Creating account..."),
